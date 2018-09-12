@@ -9,7 +9,7 @@ public class servoTester extends LinearOpMode {
     private Servo servo = null;
     @Override
     public void runOpMode() {
-        servo = hardwareMap.servo.get("armServo"); //Change "armServo" to servo's name in hardware map
+        servo = hardwareMap.servo.get("servo"); //Change "servo" to servo's name in hardware map
 
         while(!opModeIsActive()){}
         
@@ -21,11 +21,7 @@ public class servoTester extends LinearOpMode {
         }
     }
     public void servoAdjust(){
-        int denominator = 1000;
-        if(gamepad1.right_bumper){
-            denominator = 100;
-        }
-        servo.setPosition(servo.getPosition() - gamepad1.right_stick_x/denominator);
+        servo.setPosition(servo.getPosition() + (-gamepad1.left_stick_y + gamepad1.left_stick_x - gamepad1.right_stick_y + gamepad1.right_stick_x)/1000);
     }
     public void servoToLimits(){
         if(gamepad1.b){
