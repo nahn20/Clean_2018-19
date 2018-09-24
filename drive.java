@@ -37,6 +37,7 @@ public class drive extends LinearOpMode {
         while(!opModeIsActive()){
         }
         while(opModeIsActive()){
+            angleOverflow(); //Keep at the beginning of teleop loop
             updateKeys();
             telemetry.update();//THIS GOES AT THE END
         }
@@ -76,6 +77,17 @@ public class drive extends LinearOpMode {
         back_right_wheel.setPower(Py + Protate);
         front_right_wheel.setPower(Px + Protate);
     }
+    public void angleOverflow(){ //Increase fullRotationCount when angle goes above 2*PI or below 0 
+        float heading = getHeading() - fullRotationCount*(2*Math.PI);
+        //Warning: Will break if the robot does a 180 in less thank 1 tick, but that probably won't happen
+        if(heading < Math.PI && previousAngle > Math.PI){
+            fullRotationCount++;
+        }
+        if(heading > Math.PI && previousAngle < Math.PI){
+            fullRotationCount--;
+        }
+        previousAngle = heading;
+    }
     public float getHeading(){ //Includes angle subtraction, angle to radian conversion, and 180>-180 to regular system conversion
         Orientation angles = boat.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         float heading = angles.firstAngle;
@@ -85,14 +97,6 @@ public class drive extends LinearOpMode {
         }
         heading = heading - newZero;
         
-        //Warning: Will break if the robot does a 180 in less thank 1 tick, but that probably won't happen
-        if(heading < Math.PI && previousAngle > Math.PI){
-            fullRotationCount++;
-        }
-        if(heading > Math.PI && previousAngle < Math.PI){
-            fullRotationCount--;
-        }
-        previousAngle = heading;
         heading += fullRotationCount*(2*Math.PI);
         return heading;
     }
