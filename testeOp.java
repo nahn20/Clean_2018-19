@@ -45,7 +45,14 @@ public class testeOp extends LinearOpMode {
                 (int) (shell.colorSensor.green() * scale_factor),
                 (int) (shell.colorSensor.blue() * scale_factor),
                 hsvValues);
-        telemetry.addData("HSV Values", hsvValues[0]);
+        float hsv = hsvValues[0];
+        telemetry.addData("HSV Values", hsv);
+        if(hsv > 30 && hsv < 60){
+            telemetry.addData("Color", "Yellow");
+        }
+        if(hsv > 130 && hsv < 170){
+            telemetry.addData("Color", "Yellow");
+        }
     }
     
     ////////////////////////////////
