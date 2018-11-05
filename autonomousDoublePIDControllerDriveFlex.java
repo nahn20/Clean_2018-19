@@ -5,8 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name="template", group="Pushboat")
-public class template extends LinearOpMode {
+@TeleOp(name="autonomousDoublePIDControllerDriveFlex", group="Pushboat")
+public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
     shellFish shell = new shellFish();
     toggleMap toggleMap1 = new toggleMap();
     useMap useMap1 = new useMap();
@@ -126,7 +126,7 @@ public class template extends LinearOpMode {
             integralRotate += errorRotate*deltaT;
             derivativeRotate = (errorRotate-tempErrorRotate)/deltaT;
             pRotate = kRotate[0]*errorRotate + kRotate[1]*integralRotate + kRotate[2]*derivativeRotate;
-            
+
             //drive(theta, pDrive, pRotate);
             lastTime = runtime.milliseconds();
         }
