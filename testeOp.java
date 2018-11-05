@@ -21,13 +21,16 @@ public class testeOp extends LinearOpMode {
     
     @Override
     public void runOpMode() {
+
         shell.init(hardwareMap);
         shell.imu();
         
         while(!opModeIsActive()){
         }
         while(opModeIsActive()){
-            colorSensorDisplayHSV();
+            telemetry.addData(">", "Eh");
+            telemetry.addData("Encoder", shell.encoder1.getVoltage());
+//            colorSensorDisplayHSV();
             updateKeys();
             telemetry.update();//THIS GOES AT THE END
         }
@@ -35,6 +38,7 @@ public class testeOp extends LinearOpMode {
     ///////////
     // TESTS //
     ///////////
+    /*
     public void colorSensorDisplayHSV(){
         int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
         final View relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
@@ -53,6 +57,10 @@ public class testeOp extends LinearOpMode {
         if(hsv > 130 && hsv < 170){
             telemetry.addData("Color", "Yellow");
         }
+    }
+    */
+    public void displayEncoder(){
+        
     }
     
     ////////////////////////////////

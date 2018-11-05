@@ -5,6 +5,12 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
 @TeleOp(name="drive", group="Pushboat")
 public class drive extends LinearOpMode {
     shellFish shell = new shellFish();
@@ -22,9 +28,9 @@ public class drive extends LinearOpMode {
     /////////////////
     /*IMU Variables*/
     //[[[[[[[[[[[[[[[
-    float newZero = 0;
+    double newZero = 0;
     int fullRotationCount = 0;
-    float previousAngle = 0;
+    double previousAngle = 0;
     //]]]]]]]]]]]]]]]
     
     private ElapsedTime runtime = new ElapsedTime();
@@ -38,6 +44,7 @@ public class drive extends LinearOpMode {
         }
         while(opModeIsActive()){
             angleOverflow(); //Keep at the beginning of teleop loop
+            drive2();
             updateKeys();
             telemetry.update();//THIS GOES AT THE END
         }
@@ -45,7 +52,13 @@ public class drive extends LinearOpMode {
     ////////////////
     // DRIVE CODE //
     //[[[[[[[[[[[[[[
-    
+    public void drive2(){
+        double power = gamepad1.left_stick_y;
+        //shell.front_left_motor.setPower(power);
+        shell.back_left_motor.setPower(power);
+        //shell.back_right_motor.setPower(power);
+        //shell.front_right_motor.setPower(power);
+    }
     public void drive(){
         double Protate = gamepad1.right_stick_x/4;
         double stick_x = gamepad1.left_stick_x * Math.sqrt(Math.pow(1-Math.abs(Protate), 2)/2); //Accounts for Protate when limiting magnitude to be less than 1
@@ -53,7 +66,7 @@ public class drive extends LinearOpMode {
         double theta = 0;
         double Px = 0;
         double Py = 0;
-        float gyroAngle = getHeading(); //In radiants, proper rotation, yay
+        double gyroAngle = getHeading(); //In radiants, proper rotation, yay
         
         if(gamepad1.right_bumper){ //Removes gyroAngle from the equation meaning the robot drives normally
             gyroAngle = 0;
@@ -72,13 +85,13 @@ public class drive extends LinearOpMode {
         telemetry.addData("Back Right", Py + Protate);
         telemetry.addData("Front Right", Px + Protate);
                           
-        front_left_wheel.setPower(Py - Protate);
-        back_left_wheel.setPower(Px - Protate);
-        back_right_wheel.setPower(Py + Protate);
-        front_right_wheel.setPower(Px + Protate);
+        shell.front_left_motor.setPower(Py - Protate);
+        shell.back_left_motor.setPower(Px - Protate);
+        shell.back_right_motor.setPower(Py + Protate);
+        shell.front_right_motor.setPower(Px + Protate);
     }
     public void angleOverflow(){ //Increase fullRotationCount when angle goes above 2*PI or below 0 
-        float heading = getHeading() - fullRotationCount*(2*Math.PI);
+        double heading = getHeading() - fullRotationCount*(2*Math.PI);
         //Warning: Will break if the robot does a 180 in less thank 1 tick, but that probably won't happen
         if(heading < Math.PI && previousAngle > Math.PI){
             fullRotationCount++;
@@ -88,9 +101,9 @@ public class drive extends LinearOpMode {
         }
         previousAngle = heading;
     }
-    public float getHeading(){ //Includes angle subtraction, angle to radian conversion, and 180>-180 to regular system conversion
-        Orientation angles = boat.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-        float heading = angles.firstAngle;
+    public double getHeading(){ //Includes angle subtraction, angle to radian conversion, and 180>-180 to regular system conversion
+        Orientation angles = shell.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        double heading = angles.firstAngle;
         heading = (Math.PI/180)*heading;
         if(heading < 0){
             heading = (2*Math.PI) + heading;

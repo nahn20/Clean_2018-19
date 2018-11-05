@@ -20,7 +20,16 @@ public class shellFish{
     /* DECLARATIONS */
     //////////////////
     
-    public ColorSensor colorSensor = null;
+    //public ColorSensor colorSensor = null;
+    
+    
+    //DRIVE//
+    public DcMotor front_left_motor   = null;
+    public DcMotor front_right_motor  = null;
+    public DcMotor back_left_motor    = null;
+    public DcMotor back_right_motor   = null;
+    
+    public AnalogInput encoder1 = null;
     
     //IMU//
     BNO055IMU imu;
@@ -39,7 +48,26 @@ public class shellFish{
         //////////////////////////////////
         /* RETRIEVING STUFF FROM PHONES */
         //////////////////////////////////
-        colorSensor = hwMap.get(ColorSensor.class, "colorSensor");
+        
+        //colorSensor = hwMap.get(ColorSensor.class, "colorSensor");
+        
+        //DRIVE//
+        front_left_motor   = hwMap.dcMotor.get("fl");
+        front_right_motor  = hwMap.dcMotor.get("fr");
+        back_left_motor    = hwMap.dcMotor.get("bl");
+        back_right_motor   = hwMap.dcMotor.get("br");
+        
+        front_left_motor.setDirection(DcMotor.Direction.FORWARD);
+        front_right_motor.setDirection(DcMotor.Direction.FORWARD);
+        back_left_motor.setDirection(DcMotor.Direction.FORWARD);
+        back_right_motor.setDirection(DcMotor.Direction.FORWARD);
+        
+        front_left_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        front_right_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        back_left_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        back_right_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        
+        encoder1 = hwMap.analogInput.get("encoder1");
         
         //IMU//
         imu = hwMap.get(BNO055IMU.class, "imu");
