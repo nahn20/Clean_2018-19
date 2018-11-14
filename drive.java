@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -44,7 +43,7 @@ public class drive extends LinearOpMode {
         }
         while(opModeIsActive()){
             angleOverflow(); //Keep at the beginning of teleop loop
-            drive2();
+            drive();
             updateKeys();
             telemetry.update();//THIS GOES AT THE END
         }
@@ -52,51 +51,54 @@ public class drive extends LinearOpMode {
     ////////////////
     // DRIVE CODE //
     //[[[[[[[[[[[[[[
-    public void drive2(){
-        double power = gamepad1.left_stick_y;
-        //shell.front_left_motor.setPower(power);
-        shell.back_left_motor.setPower(power);
-        //shell.back_right_motor.setPower(power);
-        //shell.front_right_motor.setPower(power);
-    }
     public void drive(){
-        double Protate = gamepad1.right_stick_x/4;
-        double stick_x = gamepad1.left_stick_x * Math.sqrt(Math.pow(1-Math.abs(Protate), 2)/2); //Accounts for Protate when limiting magnitude to be less than 1
-        double stick_y = gamepad1.left_stick_y * Math.sqrt(Math.pow(1-Math.abs(Protate), 2)/2);
-        double theta = 0;
-        double Px = 0;
-        double Py = 0;
-        double gyroAngle = getHeading(); //In radiants, proper rotation, yay
+        double Protate = 0.6*gamepad1.right_stick_x;
+        double stick_x = gamepad1.left_stick_x; //Accounts for Protate when limiting magnitude to be less than 1
+        double stick_y = -gamepad1.left_stick_y; //Math.sqrt(Math.pow(1-Math.abs(Protate), 2)/2)
+        double gyroAngle = getHeading(); //In radiants, proper rotation, yay!!11!!
+        double magnitudeMultiplier = 0;
         
         if(gamepad1.right_bumper){ //Removes gyroAngle from the equation meaning the robot drives normally
             gyroAngle = 0;
         }
-        
-        theta = Math.atan2(stick_y, stick_x) + Math.PI/4 - gyroAngle;
-        double magnitude = Math.sqrt(Math.pow(stick_x, 2) + Math.pow(stick_y, 2));
-        Px = magnitude * Math.cos(theta);
-        Py = magnitude * Math.sin(theta);
-                          
+
+        double theta = Math.atan2(stick_y, stick_x); //Arctan2 doesn't have bad range restriction
+        double modifiedTheta = theta + Math.PI/4 - gyroAngle; 
+
+        double thetaInFirstQuad = Math.abs(Math.atan(stick_y/stick_x)); //square to circle conversion
+        if(thetaInFirstQuad > Math.PI/4){
+            magnitudeMultiplier = Math.sin(thetaInFirstQuad); //Works because we know y is 1 when theta > Math.pi/4
+        }
+        else if(thetaInFirstQuad <= Math.PI/4){
+            magnitudeMultiplier = Math.cos(thetaInFirstQuad); //Works because we know x is 1 when theta < Math.pi/4
+        }
+
+        double magnitude = Math.sqrt(Math.pow(stick_x, 2) + Math.pow(stick_y, 2))*magnitudeMultiplier*(1-Math.abs(Protate)); //Multiplied by (1-Protate) so it doesn't go over 1 with rotating
+        double Px = magnitude * Math.cos(modifiedTheta); 
+        double Py = magnitude * Math.sin(modifiedTheta);
+
         telemetry.addData("Stick_X", stick_x);
         telemetry.addData("Stick_Y", stick_y);
+        telemetry.addData("Theta", theta);
+        telemetry.addData("Modified Theta", modifiedTheta);
         telemetry.addData("Magnitude",  magnitude);
-        telemetry.addData("Front Left", Py - Protate);
+        telemetry.addData("Front Left", Py + Protate);
         telemetry.addData("Back Left", Px - Protate);
-        telemetry.addData("Back Right", Py + Protate);
+        telemetry.addData("Back Right", Py - Protate);
         telemetry.addData("Front Right", Px + Protate);
                           
-        shell.front_left_motor.setPower(Py - Protate);
+        shell.front_left_motor.setPower(Py + Protate);
         shell.back_left_motor.setPower(Px - Protate);
-        shell.back_right_motor.setPower(Py + Protate);
+        shell.back_right_motor.setPower(Py - Protate);
         shell.front_right_motor.setPower(Px + Protate);
     }
     public void angleOverflow(){ //Increase fullRotationCount when angle goes above 2*PI or below 0 
         double heading = getHeading() - fullRotationCount*(2*Math.PI);
         //Warning: Will break if the robot does a 180 in less thank 1 tick, but that probably won't happen
-        if(heading < Math.PI && previousAngle > Math.PI){
+        if(heading < Math.PI/4 && previousAngle > 3*Math.PI/4){
             fullRotationCount++;
         }
-        if(heading > Math.PI && previousAngle < Math.PI){
+        if(heading > 3*Math.PI/4 && previousAngle < Math.PI/4){
             fullRotationCount--;
         }
         previousAngle = heading;

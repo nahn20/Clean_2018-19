@@ -59,8 +59,8 @@ public class shellFish{
         
         front_left_motor.setDirection(DcMotor.Direction.FORWARD);
         front_right_motor.setDirection(DcMotor.Direction.FORWARD);
-        back_left_motor.setDirection(DcMotor.Direction.FORWARD);
-        back_right_motor.setDirection(DcMotor.Direction.FORWARD);
+        back_left_motor.setDirection(DcMotor.Direction.REVERSE);
+        back_right_motor.setDirection(DcMotor.Direction.REVERSE);
         
         front_left_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         front_right_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
