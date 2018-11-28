@@ -19,6 +19,8 @@ public class testeOp extends LinearOpMode {
     useMap useMap2 = new useMap();
     
     encoderClass encoder1 = new encoderClass();
+    encoderClass encoder2 = new encoderClass();
+    encoderClass encoder3 = new encoderClass();
 
     private ElapsedTime runtime = new ElapsedTime();
     
@@ -31,10 +33,16 @@ public class testeOp extends LinearOpMode {
         while(!opModeIsActive()){
         }
         encoder1.init(shell.encoder1.getVoltage());
+        encoder2.init(shell.encoder2.getVoltage());
+        encoder3.init(shell.encoder3.getVoltage());
         while(opModeIsActive()){
 
             encoder1.update(shell.encoder1.getVoltage());
-            telemetry.addData("Angle", encoder1.angle);
+            encoder2.update(shell.encoder2.getVoltage());
+            encoder3.update(shell.encoder3.getVoltage());
+            telemetry.addData("Angle1", encoder1.angle);
+            telemetry.addData("Angle2", encoder2.angle);
+            telemetry.addData("Angle3", encoder3.angle);
             updateKeys();
             telemetry.update();//THIS GOES AT THE END
         }

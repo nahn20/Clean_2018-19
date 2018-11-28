@@ -32,7 +32,7 @@ public class template extends LinearOpMode {
     ////////////////////////////////
     // TOGGLES ////////// USE MAP //
     ////////////////////////////////
-    public void updateKeys(){ 
+    public void updateKeys(){
         if(gamepad1.a && cdCheck(useMap1.a, 1000)){
             toggleMap1.a = toggle(toggleMap1.a);
             useMap1.a = runtime.milliseconds();

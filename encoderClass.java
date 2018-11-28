@@ -9,7 +9,9 @@ public class encoderClass{
     double rotationCounter = 0;
     double direction = 0;
 
+    double previousAngle = 0;
     double angle = 0;
+    double deltaAngle = 0;
 
     public encoderClass(){}
     public void init(double voltage){
@@ -36,5 +38,7 @@ public class encoderClass{
         }
         previousVoltage = voltage;
         angle = voltageToAngle*(rotationCounter*3.28+voltage-startingVoltage);
+        deltaAngle = angle-previousAngle;
+        previousAngle = angle;
     }
 }

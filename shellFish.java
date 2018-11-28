@@ -28,8 +28,15 @@ public class shellFish{
     public DcMotor front_right_motor  = null;
     public DcMotor back_left_motor    = null;
     public DcMotor back_right_motor   = null;
+
+    public DcMotor hook = null;
+
+    public DcMotor intake = null;
     
     public AnalogInput encoder1 = null;
+    public AnalogInput encoder2 = null;
+
+    public Servo deadBois = null;
     
     //IMU//
     BNO055IMU imu;
@@ -66,8 +73,17 @@ public class shellFish{
         front_right_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         back_left_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         back_right_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        
+
+        hook = hwMap.dcMotor.get("hook");
+        hook.setDirection(DcMotor.Direction.REVERSE);
+        hook.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        intake = hwMap.dcMotor.get("intake");
+
         encoder1 = hwMap.analogInput.get("encoder1");
+        encoder2 = hwMap.analogInput.get("encoder2");
+
+        deadBois = hwMap.servo.get("deadBois");
         
         //IMU//
         imu = hwMap.get(BNO055IMU.class, "imu");

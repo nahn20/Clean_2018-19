@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.app.Activity;
+import android.graphics.Color;
+import android.view.View;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -10,19 +14,16 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@TeleOp(name="drive", group="Pushboat")
-public class drive extends LinearOpMode {
+@TeleOp(name="testeOp", group="Test")
+public class testeOp extends LinearOpMode {
     shellFish shell = new shellFish();
     toggleMap toggleMap1 = new toggleMap();
     useMap useMap1 = new useMap();
     
     toggleMap toggleMap2 = new toggleMap();
     useMap useMap2 = new useMap();
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    /* V * A * R * I * A * B * E * S *////* V * A * R * I * A * B * E * S */
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
+
+    private ElapsedTime runtime = new ElapsedTime();
     
     /////////////////
     /*IMU Variables*/
@@ -31,50 +32,65 @@ public class drive extends LinearOpMode {
     int fullRotationCount = 0;
     double previousAngle = 0;
     //]]]]]]]]]]]]]]]
-    
-    private ElapsedTime runtime = new ElapsedTime();
-    
+
+    int savedEncoderPositions[] = {0, 0, 0, 0}; //fl, fr, bl, br
+
     @Override
     public void runOpMode() {
+
         shell.init(hardwareMap);
         shell.imu();
         
         while(!opModeIsActive()){
         }
-        toggleMap1.y = true;
+        shell.front_left_motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        shell.front_right_motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         while(opModeIsActive()){
-            angleOverflow(); //Keep at the beginning of teleop loop
-            drive();
-            deadBois();
+            if(gamepad1.a){
+                savedEncoderPositions[0] = shell.front_left_motor.getCurrentPosition();
+                savedEncoderPositions[1] = shell.front_right_motor.getCurrentPosition();
+            }
+            if(toggleMap1.left_bumper){
+                runToPositions(savedEncoderPositions[0], savedEncoderPositions[1], savedEncoderPositions[2], savedEncoderPositions[3], 0.3);
+            }
+            else if(toggleMap1.right_bumper){
+                runToPositions(0, 0, 0, 0, 0.3);
+            }
+            else{
+                shell.front_left_motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                shell.front_right_motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                drive();
+            }
+
             updateKeys();
             telemetry.update();//THIS GOES AT THE END
         }
     }
-    ////////////////
-    // DRIVE CODE //
-    //[[[[[[[[[[[[[[
-    public void deadBois(){
-        if(toggleMap1.y){
-            shell.deadBois.setPosition(0.0);
-        }
-        else{
-            shell.deadBois.setPosition(1.0);
-        }
+    ///////////
+    // TESTS //
+    ///////////
+    public void runToPositions(int flp, int frp, int blp, int brp, double power){
+        shell.front_left_motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        shell.front_right_motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        shell.front_left_motor.setTargetPosition(flp);
+        shell.front_right_motor.setTargetPosition(frp);
+        
+        shell.front_left_motor.setPower(power);
+        shell.front_right_motor.setPower(power);
+        shell.back_left_motor.setPower(shell.front_right_motor.getPower());
+        shell.back_right_motor.setPower(shell.front_left_motor.getPower());
+        telemetry.addData("frm power", shell.front_right_motor.getPower());
     }
+
     public void drive(){
         double Protate = 0.6*gamepad1.right_stick_x;
-        if(toggleMap1.right_bumper){
-            telemetry.addData("CHAD MODE", "ON");
-            Protate = gamepad1.right_stick_x;
-        }
         double stick_x = gamepad1.left_stick_x; //Accounts for Protate when limiting magnitude to be less than 1
         double stick_y = -gamepad1.left_stick_y; //Math.sqrt(Math.pow(1-Math.abs(Protate), 2)/2)
         double gyroAngle = getHeading(); //In radiants, proper rotation, yay!!11!!
         double magnitudeMultiplier = 0;
-        
-        if(gamepad1.left_bumper){ //Removes gyroAngle from the equation meaning the robot drives normally
-            gyroAngle = 0;
-        }
+
+        gyroAngle = 0;
+
         double theta = Math.atan2(stick_y, stick_x); //Arctan2 doesn't have bad range restriction
         double modifiedTheta = theta + Math.PI/4 - gyroAngle; 
 
@@ -89,57 +105,21 @@ public class drive extends LinearOpMode {
         double magnitude = Math.sqrt(Math.pow(stick_x, 2) + Math.pow(stick_y, 2))*magnitudeMultiplier*(1-Math.abs(Protate)); //Multiplied by (1-Protate) so it doesn't go over 1 with rotating
         double Px = magnitude * Math.cos(modifiedTheta); 
         double Py = magnitude * Math.sin(modifiedTheta);
-
-        telemetry.addData("Stick_X", stick_x);
-        telemetry.addData("Stick_Y", stick_y);
-        telemetry.addData("Theta", theta);
-        telemetry.addData("Modified Theta", modifiedTheta);
-        telemetry.addData("Magnitude",  magnitude);
-        telemetry.addData("Front Left", Py + Protate);
-        telemetry.addData("Back Left", Px - Protate);
-        telemetry.addData("Back Right", Py - Protate);
-        telemetry.addData("Front Right", Px + Protate);
-        //CCCCCCC      HHH      HHH           AA           DDDDDDD \\
-        //C            HHH      HHH          AAAA          DDD   DD\\
-        //C            HHHHHHHHHHHH         AA  AA         DDD   DD\\
-        //C            HHHHHHHHHHHH        AAAAAAAA        DDD   DD\\
-        //C            HHH      HHH       AA      AA       DDD   DD\\
-        //CCCCCCC      HHH      HHH      AA        AA      DDDDDDD \\
-        if(gamepad1.dpad_up || (toggleMap1.right_bumper && theta > Math.PI/4 && theta <= 3*Math.PI/4)){
+                        
+        if(gamepad1.dpad_up){
             Px = -1;
             Py = 1;
+            Protate = 0;
         }
-        else if(gamepad1.dpad_left || (toggleMap1.right_bumper && (theta > 3*Math.PI/4 || theta <= -3*Math.PI/4))){
-            Px = -1;
-            Py = -1;
-        }
-        else if(gamepad1.dpad_down || (toggleMap1.right_bumper && theta < -Math.PI/4 && theta >= -3*Math.PI/4)){
+        if(gamepad1.dpad_down){
             Px = 1;
             Py = -1;
-        }
-        else if(gamepad1.dpad_right || (toggleMap1.right_bumper && theta > -Math.PI/4 && theta <= Math.PI/4 && !(stick_y == 0 && stick_x == 0))){
-            Px = 1;
-            Py = 1;
-        }
-        else if(toggleMap1.right_bumper){
-            Px = 0;
-            Py = 0;
+            Protate = 0;
         }
         shell.front_left_motor.setPower(Py + Protate);
         shell.back_left_motor.setPower(Px - Protate);
         shell.back_right_motor.setPower(Py - Protate);
         shell.front_right_motor.setPower(Px + Protate);
-    }
-    public void angleOverflow(){ //Increase fullRotationCount when angle goes above 2*PI or below 0 
-        double heading = getHeading() - fullRotationCount*(2*Math.PI);
-        //Warning: Will break if the robot does a 180 in less thank 1 tick, but that probably won't happen
-        if(heading < Math.PI/2 && previousAngle > 3*Math.PI/2){
-            fullRotationCount++;
-        }
-        if(heading > 3*Math.PI/2 && previousAngle < Math.PI/2){
-            fullRotationCount--;
-        }
-        previousAngle = heading;
     }
     public double getHeading(){ //Includes angle subtraction, angle to radian conversion, and 180>-180 to regular system conversion
         Orientation angles = shell.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
@@ -153,22 +133,29 @@ public class drive extends LinearOpMode {
         heading += fullRotationCount*(2*Math.PI);
         return heading;
     }
-    
-    //]]]]]]]]]]]]]]
-    
     ////////////////////////////////
     // TOGGLES ////////// USE MAP //
-    //[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[
-    
+    ////////////////////////////////
     public void updateKeys(){ 
+        if(gamepad1.a && cdCheck(useMap1.a, 1000)){
+            toggleMap1.a = toggle(toggleMap1.a);
+            useMap1.a = runtime.milliseconds();
+        }
+        if(gamepad1.b && cdCheck(useMap1.b, 500)){
+            toggleMap1.b = toggle(toggleMap1.b);
+            useMap1.b = runtime.milliseconds();
+        }
+        if(gamepad1.left_bumper && cdCheck(useMap1.left_bumper, 500)){
+            toggleMap1.left_bumper = toggle(toggleMap1.left_bumper);
+            useMap1.left_bumper = runtime.milliseconds();
+            toggleMap1.right_bumper = false;
+        }
         if(gamepad1.right_bumper && cdCheck(useMap1.right_bumper, 500)){
             toggleMap1.right_bumper = toggle(toggleMap1.right_bumper);
             useMap1.right_bumper = runtime.milliseconds();
+            toggleMap1.left_bumper = false;
         }
-        if(gamepad1.y && cdCheck(useMap1.y, 500)){
-            toggleMap1.y = toggle(toggleMap1.y);
-            useMap1.y = runtime.milliseconds();
-        }
+
     }
     public boolean cdCheck(double key, int cdTime){
         return runtime.milliseconds() - key > cdTime;
@@ -182,8 +169,6 @@ public class drive extends LinearOpMode {
         }
         return variable;
     }
-    
-    //]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
 }
 
 
