@@ -25,9 +25,9 @@ public class encoderClass{
         else if(previousVoltage > 3.28 - range && voltage < range){
             rotationCounter++;
         }
-        else if(Math.abs(voltage-previousVoltage) > range){
-            rotationCounter += direction;
-        }
+        // else if(Math.abs(voltage-previousVoltage) > range){
+        //     rotationCounter += direction;
+        // }
         if(voltage < 3 && voltage > 0.3 && previousVoltage < 3 && previousVoltage > 0.3){
             if(voltage - previousVoltage > 0.1){
                 direction = 1;

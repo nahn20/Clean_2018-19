@@ -19,23 +19,24 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
     toggleMap toggleMap2 = new toggleMap();
     useMap useMap2 = new useMap();
 
-    encoderClass encoder1 = new encoderClass();
-    encoderClass encoder2 = new encoderClass();
+    encoderClass encoderX = new encoderClass();
+    encoderClass encoderY = new encoderClass();
 
-    double x = 0; //From drop, driving out is +x
-    double y = 0; //From drop, driving left is +y, driving right is -y
+    double x = 0; //From drop, driving right is +x, left is -x
+    double y = 0; //From drop, driving out is +y
     int fullRotationCount = 0;
     double previousAngle = 0;
     double angle = 0;
-    double savedX = 3;
-    double savedY = 3;
+    double savedX = 10;
+    double savedY = 10;
     double savedAngle = Math.PI/2;
     ////////////////
     // PID Stuffs \\
 
     //PID constants are [p, i, d] in order. 
-    double kRotate[] = {0, 0, 0}; //PID constants for rotation
-    double kDrive[] = {.21, 6.82, 3.72}; //PID constants for linear drive power
+    double kRotate[] = {0, 0, 0; //PID constants for rotation
+    double kDrive[] = {0, 0, 0}; //PID constants for linear drive power
+    //{.21, 6.82, 3.72}
 
     double errorDrive = 0;
     double errorRotate = 0;
@@ -56,36 +57,33 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
         
         while(!opModeIsActive()){
         }
-        //toggleMap2.b = true;
-        toggleMap1.x = true;
+        toggleMap2.b = true;
         //toggleMap1.left_bumper = true;
-        encoder1.init(shell.encoder1.getVoltage());
-        encoder2.init(shell.encoder2.getVoltage());
+        encoderX.init(shell.encoderX.getVoltage());
+        encoderY.init(shell.encoderY.getVoltage());
         lastTime = runtime.milliseconds();
         while(opModeIsActive()){
             //Priority 1
             updateKeys();
-            encoder1.update(shell.encoder1.getVoltage());
-            encoder2.update(shell.encoder2.getVoltage());
+            encoderX.update(shell.encoderX.getVoltage());
+            encoderY.update(shell.encoderY.getVoltage());
             angleOverflow();
             updateCoordinates();
             //Priority 2
-            deadBois();
             constantModifier();
+            customTelemetryDouble("X", (double) (Math.round(x*100))/100);
+            customTelemetryDouble("Y", (double) (Math.round(y*100))/100);
+            customTelemetryDouble("Angle", (double) (Math.round(getHeading()*100))/100);
             if(!toggleMap1.x){
                 drive();
             }
-            telemetry.addData("X", x);
-            telemetry.addData("Y", y);
-            telemetry.addData("Full Rotation Count", fullRotationCount);
-            telemetry.addData("Angle", 180*getHeading()/Math.PI);
 
             if(toggleMap1.right_bumper){
-                telemetry.addData("Going to", 0 + " " + 0 + " " + 0);
+                customTelemetryString("Going to", 0 + " " + 0 + " " + 0);
                 doublePID(0, 0, 0);
             }
             else if(toggleMap1.left_bumper){
-                telemetry.addData("Going to", savedX + " " + savedY + " " + savedAngle);
+                customTelemetryString("Going to", savedX + " " + savedY + " " + savedAngle);
                 doublePID(savedX, savedY, savedAngle);
             }
             else{
@@ -96,7 +94,9 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
                 savedY = y;
                 savedAngle = getHeading();
             }
-            telemetry.update();//THIS GOES AT THE END
+            if((gamepad1.left_stick_button && cdCheck(useMap1.left_stick_button, 500)) || (gamepad2.left_stick_button && cdCheck(useMap2.left_stick_button, 500))){
+                telemetry.update();//THIS GOES AT THE END
+            }
         }
     }
     public void constantModifier(){
@@ -114,25 +114,25 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
             incrementAmount = -incrementAmount; //Subtracts instead if using dpad_down
         }
         if(toggleMap2.b){
-            telemetry.addData("Editing", "Rotation Constants");
-            telemetry.addData("kP", kRotate[0]);
-            telemetry.addData("kI", kRotate[1]);
-            telemetry.addData("kD", kRotate[2]);
+            customTelemetryString("Editing", "Rotation Constants");
+            customTelemetryDouble("kP", kRotate[0]);
+            customTelemetryDouble("kI", kRotate[1]);
+            customTelemetryDouble("kD", kRotate[2]);
         }
         else if(!toggleMap2.b){
-            telemetry.addData("Editing", "Drive Constants");
-            telemetry.addData("kP", kDrive[0]);
-            telemetry.addData("kI", kDrive[1]);
-            telemetry.addData("kD", kDrive[2]);
+            customTelemetryString("Editing", "Drive Constants");
+            customTelemetryDouble("kP", kDrive[0]);
+            customTelemetryDouble("kI", kDrive[1]);
+            customTelemetryDouble("kD", kDrive[2]);
         }
         if(toggleMap2.y){
-            telemetry.addData("Editing", "kP");
+            customTelemetryString("Editing", "kP");
         }
         if(toggleMap2.x){
-            telemetry.addData("Editing", "kI");
+            customTelemetryString("Editing", "kI");
         }
         if(toggleMap2.a){
-            telemetry.addData("Editing", "kD");
+            customTelemetryString("Editing", "kD");
         }
         if((gamepad2.dpad_up && cdCheck(useMap2.dpad_up, 20)) || (gamepad2.dpad_down && cdCheck(useMap2.dpad_down, 20))){ //More compact this way
             if(toggleMap2.b){
@@ -169,7 +169,6 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
     }
     //I'm leaving a lot of notes labeled TODOInAutonomous because they're things I need to do once this is converted to an autonomous
     public void doublePID(double desiredX, double desiredY, double desiredAngle){
-        updateCoordinates();
         double errorX = x-desiredX;
         double errorY = desiredY-y;
         double tempErrorDrive = errorDrive;
@@ -178,14 +177,12 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
         errorRotate = angle - desiredAngle;
         //lastTime = runtime.milliseconds(); //TODOInAutonomous: Uncomment this. Makes it so deltaT isn't f'd by long time in between drives
         if(true){ //TODOInAutonomous: Switch this to while(){}
-            updateCoordinates();
             double theta = Math.atan2(errorY, errorX);
             if(theta < 0){
                 theta += Math.PI;
             }
             theta = -(theta-Math.PI);
             double deltaT = (runtime.milliseconds() - lastTime); //Delta time. Subtracts last time of tick from current time
-            telemetry.addData("deltaT", deltaT);
             errorX = x-desiredX; //Code repetition is unnecessary in teleop, but needed in auto
             errorY = desiredY-y;
             tempErrorDrive = errorDrive;
@@ -208,9 +205,13 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
             }
             derivativeDrive = (tempErrorDrive-errorDrive)/deltaT;
             pDrive = kDrive[0]*errorDrive + kDrive[1]*integralDrive + kDrive[2]*derivativeDrive;
-            telemetry.addData("Proportional", kDrive[0]*errorDrive);
-            telemetry.addData("Integral", kDrive[1]*integralDrive);
-            telemetry.addData("Derivative", kDrive[2]*derivativeDrive);
+            customTelemetryString("!!!", "Linear Drive Variables");
+            customTelemetryDouble("Error Drive", errorDrive)
+            customTelemetryDouble("Proportional", kDrive[0]*errorDrive);
+            customTelemetryDouble("Integral", kDrive[1]*integralDrive);
+            customTelemetryDouble("Derivative", kDrive[2]*derivativeDrive);
+            customTelemetryDouble("Drive At Theta", 180*theta/Math.PI);
+            customTelemetryDouble("Power", pDrive);
 
             integralRotate += errorRotate*deltaT/10000;
             if(Math.abs(errorRotate) > Math.PI/8){
@@ -218,10 +219,14 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
             }
             derivativeRotate = (tempErrorRotate-errorRotate)/deltaT;
             pRotate = kRotate[0]*errorRotate + kRotate[1]*integralRotate + kRotate[2]*derivativeRotate;
-            telemetry.addData("DriveAtTheta", 180*theta/Math.PI);
-            telemetry.addData("DriveLinearPower", pDrive);
-            telemetry.addData("DriveRotatePower", pRotate);
-            telemetry.addData("Error Rotate", errorRotate);
+            customTelemetryStirng("!!!", "Rotational Drive Variables");
+            customTelemetryDouble("Error Rotate", errorRotate);
+            customTelemetryDouble("Rotational Proportional", kDrive[0]*errorDrive);
+            customTelemetryDouble("Rotational Integral", kDrive[1]*integralDrive);
+            customTelemetryDouble("Rotational Derivative", kDrive[2]*derivativeDrive);
+            customTelemetryDouble("Rotational Power", pRotate);
+
+
             if(toggleMap1.x){
                 autoDrive(theta, pDrive, pRotate);
             }
@@ -243,27 +248,11 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
     }
     public void updateCoordinates(){
         angle = getHeading();
-        double deltaYAngle = encoder2.deltaAngle;
-        double deltaXAngle = -encoder1.deltaAngle;
+        double deltaYAngle = encoderY.deltaAngle;
+        double deltaXAngle = -encoderX.deltaAngle;
         double movementAngle = Math.atan2(deltaYAngle, deltaXAngle);
         x -= Math.sqrt(Math.pow(deltaXAngle, 2)+Math.pow(deltaYAngle, 2))*Math.cos(movementAngle-angle);
         y += Math.sqrt(Math.pow(deltaXAngle, 2)+Math.pow(deltaYAngle, 2))*Math.sin(movementAngle-angle);
-        // y += Math.cos(angle)*(-encoder1.deltaAngle + encoder2.deltaAngle)/2;
-        // x -= Math.cos(angle)*encoder3.deltaAngle;
-        // angle = 2*Math.PI*(y - encoder1.angle)/11.285;
-        // telemetry.addData("1", encoder1.angle);
-        // telemetry.addData("2", encoder2.angle);
-        // telemetry.addData("3", encoder3.angle);
-        // telemetry.addData("parallel dif", encoder1.angle/encoder2.angle);
-        // telemetry.addData("Conversion Factor", getHeading()/(y - encoder1.angle));
-    }
-    public void deadBois(){
-        if(toggleMap1.y){
-            shell.deadBois.setPosition(0.0);
-        }
-        else{
-            shell.deadBois.setPosition(1.0);
-        }
     }
     public void drive(){
         double Protate = 0.6*gamepad1.right_stick_x;
@@ -288,16 +277,6 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
         double magnitude = Math.sqrt(Math.pow(stick_x, 2) + Math.pow(stick_y, 2))*magnitudeMultiplier*(1-Math.abs(Protate)); //Multiplied by (1-Protate) so it doesn't go over 1 with rotating
         double Px = magnitude * Math.cos(modifiedTheta); 
         double Py = magnitude * Math.sin(modifiedTheta);
-
-        // telemetry.addData("Stick_X", stick_x);
-        // telemetry.addData("Stick_Y", stick_y);
-        // telemetry.addData("Theta", theta);
-        // telemetry.addData("Modified Theta", modifiedTheta);
-        // telemetry.addData("Magnitude",  magnitude);
-        // telemetry.addData("Front Left", Py + Protate);
-        // telemetry.addData("Back Left", Px - Protate);
-        // telemetry.addData("Back Right", Py - Protate);
-        // telemetry.addData("Front Right", Px + Protate);
                           
         shell.front_left_motor.setPower(Py + Protate);
         shell.back_left_motor.setPower(Px - Protate);
@@ -370,6 +349,12 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
             useMap1.right_bumper = runtime.milliseconds();
             toggleMap1.left_bumper = false;
         }
+        if(gamepad1.left_stick_button){
+            useMap1.left_stick_button = runtime.milliseconds();
+        }
+        if(gamepad2.left_stick_button){
+            useMap2.left_stick_button = runtime.milliseconds();
+        }
     }
     public boolean cdCheck(double key, int cdTime){
         return runtime.milliseconds() - key > cdTime;
@@ -382,6 +367,16 @@ public class autonomousDoublePIDControllerDriveFlex extends LinearOpMode {
             variable = true;
         }
         return variable;
+    }
+    public void customTelemetryDouble(string 1, double 2){
+        if((gamepad1.left_stick_button && cdCheck(useMap1.left_stick_button, 500)) || (gamepad2.left_stick_button && cdCheck(useMap2.left_stick_button, 500))){
+            telemetry.addData(1, 2);
+        }
+    }
+    public void customTelemetryString(string 1, string 2){
+        if((gamepad1.left_stick_button && cdCheck(useMap1.left_stick_button, 500)) || (gamepad2.left_stick_button && cdCheck(useMap2.left_stick_button, 500))){
+            telemetry.addData(1, 2);
+        }
     }
 }
 

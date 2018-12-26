@@ -10,24 +10,32 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-@Autonomous(name="craterSingleAuto", group="Sheldor Autonomae")
-public class craterSingleAuto extends LinearOpMode{
+import android.view.View;
+import android.graphics.Color;
+import android.app.Activity;
+
+import com.qualcomm.robotcore.util.Range;
+
+@Autonomous(name="markerDouble", group="Sheldor Autonomae")
+public class markerDouble extends LinearOpMode{
     
     private ElapsedTime runtime = new ElapsedTime();
     shellFish shell = new shellFish();
 
     encoderClass encoder1 = new encoderClass();
     encoderClass encoder2 = new encoderClass();
-    String cheese = "center"; //Better to use int, but here I get to write string cheese
-
+    String cheese1 = "center"; //Better to use int, but here I get to write string cheese
+    
     double x = 0; //From drop, driving out is +x
     double y = 0; //From drop, driving left is +y, driving right is -y
     int fullRotationCount = 0;
     double previousAngle = 0;
     double angle = 0;
 
+    double time;
+
     //PID STUFF\\
-    double kRotate[] = {0, 0, 0}; //PID constants for rotation
+    double kRotate[] = {1, 4.06, 2.31}; //PID constants for rotation
     double kDrive[] = {.21, 6.82, 3.72}; //PID constants for linear drive power
 
     double errorDrive = 0;
@@ -43,7 +51,7 @@ public class craterSingleAuto extends LinearOpMode{
         telemetry.addData(">", "Wait");
         telemetry.update();
         shell.init(hardwareMap);
-        //AutoTransitioner.transitionOnStop(this, "RedFar_TunaOp");
+        AutoTransitioner.transitionOnStop(this, "mainTeleOp");
 
         telemetry.addData(">", "Loading IMU.");
         telemetry.update();
@@ -64,28 +72,82 @@ public class craterSingleAuto extends LinearOpMode{
         shell.deadBois.setPosition(1.0);
         encoder1.init(shell.encoder1.getVoltage());
         encoder2.init(shell.encoder2.getVoltage());
-        if(cheese == "center"){
-            doublePID(-14.4, -0.38, 0, 0.5, 0);
-            doublePID(-7.2, -1.09, 0, 0.5, 0);
+
+        time = runtime.milliseconds();
+        while(runtime.milliseconds()-time < 800){
+            //autoDrive(Math.PI, 0.5, 0);
         }
-        doublePID(-5.07, -23.25, 0, 0.5, 0);
-        doublePID(7.8, -34.5, 0, 0.5, 0);
-        //doublePID(0, 0, 0, 0.3, 0);
+        if(cheese1 == "center"){
+            doublePID(0, 25.72, 0, 1, 1);
+        }
+        shell.intakeServo.setPosition(1);
+        outtakeMarker();
+        doublePID(0, 7.38, 0, 0.5, 1);
+        doublePID(10.24, 6.58, 0, 1, 1);
+        doublePID(25.46, 10.94, -2.33, 1, 1);
+        //doColorMineral();
+        driveTime(2000, -0.5, 0.5);
     
     }
-    public void doublePID(double desiredX, double desiredY, double desiredAngle, double driveMargin, double rotateMargin){
+    public void outtakeMarker(){
+        double startTimeTime = runtime.milliseconds();
+        while(runtime.milliseconds() - startTimeTime < 1000){
+            shell.intake.setPower(1);
+        }
+        shell.intake.setPower(0);
+    }
+    public void doColorMineral(){
+        shell.deadBois.setPosition(0.0);
+        double start = runtime.milliseconds();
+        int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
+        final View relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
+        float hsvValues1[] = {0F, 0F, 0F};
+        float hsvValues2[] = {0F, 0F, 0F};
+        final double scale_factor = 255;
+        while(runtime.milliseconds() - start < 1000 && opModeIsActive()){}
+        double Px = .5;
+        double Py = .5;
+        boolean seeCheese = false;
+        int confidence = 0;
+        do{
+            shell.front_left_motor.setPower(Py);
+            shell.back_left_motor.setPower(Px);
+            shell.back_right_motor.setPower(Py);
+            shell.front_right_motor.setPower(Px);
+            Color.RGBToHSV((int) (shell.groundSensor1.red() * scale_factor),
+                    (int) (shell.groundSensor1.green() * scale_factor),
+                    (int) (shell.groundSensor1.blue() * scale_factor),
+                    hsvValues1);
+            Color.RGBToHSV((int) (shell.groundSensor2.red() * scale_factor),
+                    (int) (shell.groundSensor2.green() * scale_factor),
+                    (int) (shell.groundSensor2.blue() * scale_factor),
+                    hsvValues2);
+            if((hsvValues1[0] > 20 && hsvValues1[0] < 85) || (hsvValues2[0] > 20 && hsvValues2[0] < 85)){
+                confidence++;
+                telemetry.addData("Cheese", "Cheese");
+            }
+            telemetry.addData("Time", runtime.milliseconds() - start);
+            telemetry.addData("HSV Values 1", hsvValues1[0]);
+            telemetry.addData("HSV Values 2", hsvValues2[0]);
+            telemetry.update();
+        }
+        while(runtime.milliseconds() - start < 15000 && confidence < 5 && opModeIsActive());
+        shell.deadBois.setPosition(1.0);
+        sleepNotSleep(400);
+        driveTime(400, -0.5, 0.5);
+        shell.deadBois.setPosition(0.0);
+        sleepNotSleep(400);
+        driveTime(1000, 1, -1);
+    }
+    public void doublePID(double desiredX, double desiredY, double desiredAngle, double driveMargin, double rotatePowerCap){
         updateCoordinates();
         boolean running = true;
         double driveTime = runtime.milliseconds();
-        double errorX = x-desiredX;
-        double errorY = desiredY-y;
-        double tempErrorDrive = errorDrive;
-        double tempErrorRotate = errorRotate;
-        errorDrive = Math.sqrt(Math.pow(errorX, 2) + Math.pow(errorY, 2)); //aww shit we're using polar :(
-        errorRotate = angle - desiredAngle;
         lastTime = runtime.milliseconds();
-        while(runtime.milliseconds() - driveTime < 500){
+        do{
             updateCoordinates();
+            double errorX = x-desiredX;
+            double errorY = desiredY-y;
             double theta = Math.atan2(errorY, errorX);
             if(theta < 0){
                 theta += Math.PI;
@@ -93,10 +155,8 @@ public class craterSingleAuto extends LinearOpMode{
             theta = -(theta-Math.PI);
             double deltaT = (runtime.milliseconds() - lastTime); //Delta time. Subtracts last time of tick from current time
             telemetry.addData("deltaT", deltaT);
-            errorX = x-desiredX; //Code repetition is unnecessary in teleop, but needed in auto
-            errorY = desiredY-y;
-            tempErrorDrive = errorDrive;
-            tempErrorRotate = errorRotate;
+            double tempErrorDrive = errorDrive;
+            double tempErrorRotate = errorRotate;
             errorDrive = Math.sqrt(Math.pow(errorX, 2) + Math.pow(errorY, 2));
             if(errorY < 0){
                 errorDrive *= -1;
@@ -131,12 +191,13 @@ public class craterSingleAuto extends LinearOpMode{
             telemetry.addData("Error Drive", errorDrive);
             telemetry.addData("Error Rotate", errorRotate);
             telemetry.update();
-            autoDrive(theta, pDrive, pRotate);
+            autoDrive(theta, pDrive, Range.clip(pRotate, -rotatePowerCap, rotatePowerCap));
             if(Math.abs(errorDrive) > driveMargin){
                 driveTime = runtime.milliseconds();
             }
             lastTime = runtime.milliseconds();
         }
+        while(runtime.milliseconds() - driveTime < 500 && opModeIsActive());
         shell.front_left_motor.setPower(0);
         shell.back_left_motor.setPower(0);
         shell.back_right_motor.setPower(0);
@@ -154,6 +215,25 @@ public class craterSingleAuto extends LinearOpMode{
         shell.back_right_motor.setPower(Py - Protate);
         shell.front_right_motor.setPower(Px + Protate);
     }
+    public void driveTime(double time, double Px, double Py){
+        double start = runtime.milliseconds();
+        while(runtime.milliseconds() - start < time && opModeIsActive()){
+            shell.front_left_motor.setPower(Py);
+            shell.back_left_motor.setPower(Px);
+            shell.back_right_motor.setPower(Py);
+            shell.front_right_motor.setPower(Px);
+        }
+        shell.front_left_motor.setPower(0);
+        shell.back_left_motor.setPower(0);
+        shell.back_right_motor.setPower(0);
+        shell.front_right_motor.setPower(0);
+    }
+    public void sleepNotSleep(double time){
+        double start = runtime.milliseconds();
+        while(runtime.milliseconds() - start < time && opModeIsActive()){
+        }
+    }
+
     public void updateCoordinates(){
         encoder1.update(shell.encoder1.getVoltage());
         encoder2.update(shell.encoder2.getVoltage());

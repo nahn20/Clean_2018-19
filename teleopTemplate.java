@@ -62,6 +62,11 @@ public class template extends LinearOpMode {
         }
         return variable;
     }
+    public void customTelemetry(string 1, string 2){
+        if(cdCheck(useMap1.left_stick_button, 500)){
+            telemetry.addData(1, 2);
+        }
+    }
 }
 
 
