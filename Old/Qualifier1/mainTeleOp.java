@@ -63,6 +63,7 @@ public class mainTeleOp extends LinearOpMode {
             cheeserino();
             //Player 2 Shit
             deadBois();
+            shell.chadArm.setPower(gamepad2,left_stick_y);
             if(gamepad2.b){
                 telemetry.addData("Chad Mode", toggleMap1.right_trigger);
                 telemetry.addData("Drive Using Gyro", toggleMap1.left_bumper);

@@ -16,15 +16,15 @@ import android.app.Activity;
 
 import com.qualcomm.robotcore.util.Range;
 
-@Autonomous(name="markerDouble", group="Sheldor Autonomae")
-public class markerDouble extends LinearOpMode{
+@Autonomous(name="testingAuto", group="Testy")
+public class testingAuto extends LinearOpMode{
     
     private ElapsedTime runtime = new ElapsedTime();
     shellFish shell = new shellFish();
 
-    encoderClass encoder1 = new encoderClass();
-    encoderClass encoder2 = new encoderClass();
-    String cheese1 = "center"; //Better to use int, but here I get to write string cheese
+    encoderClass encoderX = new encoderClass();
+    encoderClass encoderY = new encoderClass();
+    String cheese = "center"; //Better to use int, but here I get to write string cheese
     
     double x = 0; //From drop, driving out is +x
     double y = 0; //From drop, driving left is +y, driving right is -y
@@ -35,8 +35,8 @@ public class markerDouble extends LinearOpMode{
     double time;
 
     //PID STUFF\\
+    double kDrive[] = {.3, 10.82, 3.72}; //PID constants for linear drive power
     double kRotate[] = {1, 4.06, 2.31}; //PID constants for rotation
-    double kDrive[] = {.21, 6.82, 3.72}; //PID constants for linear drive power
 
     double errorDrive = 0;
     double errorRotate = 0;
@@ -51,7 +51,6 @@ public class markerDouble extends LinearOpMode{
         telemetry.addData(">", "Wait");
         telemetry.update();
         shell.init(hardwareMap);
-        AutoTransitioner.transitionOnStop(this, "mainTeleOp");
 
         telemetry.addData(">", "Loading IMU.");
         telemetry.update();
@@ -69,79 +68,16 @@ public class markerDouble extends LinearOpMode{
         ////////////////////////////////////////////////////////////
         
         double startTime = runtime.milliseconds();
-        shell.deadBois.setPosition(1.0);
-        encoder1.init(shell.encoder1.getVoltage());
-        encoder2.init(shell.encoder2.getVoltage());
-
-        time = runtime.milliseconds();
-        while(runtime.milliseconds()-time < 800){
-            //autoDrive(Math.PI, 0.5, 0);
-        }
-        if(cheese1 == "center"){
-            doublePID(0, 25.72, 0, 1, 1);
-        }
-        shell.intakeServo.setPosition(1);
-        outtakeMarker();
-        doublePID(0, 7.38, 0, 0.5, 1);
-        doublePID(10.24, 6.58, 0, 1, 1);
-        doublePID(25.46, 10.94, -2.33, 1, 1);
-        //doColorMineral();
-        driveTime(2000, -0.5, 0.5);
+        encoderX.init(shell.encoderX.getVoltage());
+        encoderY.init(shell.encoderY.getVoltage());
+        doublePID(0, 5, Math.PI/2, true);
+        doublePID(-10, 5, Math.PI/2, false);
+        doublePID(-5, 10, 0, false);
+        doublePID(0, 0, 0, false);
+        
     
     }
-    public void outtakeMarker(){
-        double startTimeTime = runtime.milliseconds();
-        while(runtime.milliseconds() - startTimeTime < 1000){
-            shell.intake.setPower(1);
-        }
-        shell.intake.setPower(0);
-    }
-    public void doColorMineral(){
-        shell.deadBois.setPosition(0.0);
-        double start = runtime.milliseconds();
-        int relativeLayoutId = hardwareMap.appContext.getResources().getIdentifier("RelativeLayout", "id", hardwareMap.appContext.getPackageName());
-        final View relativeLayout = ((Activity) hardwareMap.appContext).findViewById(relativeLayoutId);
-        float hsvValues1[] = {0F, 0F, 0F};
-        float hsvValues2[] = {0F, 0F, 0F};
-        final double scale_factor = 255;
-        while(runtime.milliseconds() - start < 1000 && opModeIsActive()){}
-        double Px = .5;
-        double Py = .5;
-        boolean seeCheese = false;
-        int confidence = 0;
-        do{
-            shell.front_left_motor.setPower(Py);
-            shell.back_left_motor.setPower(Px);
-            shell.back_right_motor.setPower(Py);
-            shell.front_right_motor.setPower(Px);
-            Color.RGBToHSV((int) (shell.groundSensor1.red() * scale_factor),
-                    (int) (shell.groundSensor1.green() * scale_factor),
-                    (int) (shell.groundSensor1.blue() * scale_factor),
-                    hsvValues1);
-            Color.RGBToHSV((int) (shell.groundSensor2.red() * scale_factor),
-                    (int) (shell.groundSensor2.green() * scale_factor),
-                    (int) (shell.groundSensor2.blue() * scale_factor),
-                    hsvValues2);
-            if((hsvValues1[0] > 20 && hsvValues1[0] < 85) || (hsvValues2[0] > 20 && hsvValues2[0] < 85)){
-                confidence++;
-                telemetry.addData("Cheese", "Cheese");
-            }
-            telemetry.addData("Time", runtime.milliseconds() - start);
-            telemetry.addData("HSV Values 1", hsvValues1[0]);
-            telemetry.addData("HSV Values 2", hsvValues2[0]);
-            telemetry.update();
-        }
-        while(runtime.milliseconds() - start < 15000 && confidence < 5 && opModeIsActive());
-        shell.deadBois.setPosition(1.0);
-        sleepNotSleep(400);
-        driveTime(400, -0.5, 0.5);
-        shell.deadBois.setPosition(0.0);
-        sleepNotSleep(400);
-        driveTime(1000, 1, -1);
-    }
-    public void doublePID(double desiredX, double desiredY, double desiredAngle, double driveMargin, double rotatePowerCap){
-        updateCoordinates();
-        boolean running = true;
+    public void doublePID(double desiredX, double desiredY, double desiredAngle, boolean driveBy){
         double driveTime = runtime.milliseconds();
         lastTime = runtime.milliseconds();
         do{
@@ -149,12 +85,19 @@ public class markerDouble extends LinearOpMode{
             double errorX = x-desiredX;
             double errorY = desiredY-y;
             double theta = Math.atan2(errorY, errorX);
+            if(Math.abs(theta - 0) < 0.5 || Math.abs(theta - Math.PI) < 0.5){
+                kDrive[0] = .15;
+                kDrive[2] = 2;
+            }
+            else{
+                kDrive[0] = .3;
+                kDrive[2] = 3.72;
+            }
             if(theta < 0){
                 theta += Math.PI;
             }
             theta = -(theta-Math.PI);
             double deltaT = (runtime.milliseconds() - lastTime); //Delta time. Subtracts last time of tick from current time
-            telemetry.addData("deltaT", deltaT);
             double tempErrorDrive = errorDrive;
             double tempErrorRotate = errorRotate;
             errorDrive = Math.sqrt(Math.pow(errorX, 2) + Math.pow(errorY, 2));
@@ -162,42 +105,35 @@ public class markerDouble extends LinearOpMode{
                 errorDrive *= -1;
             }
             errorRotate = angle - desiredAngle;
-            //integralDrive; Just reminding myself that these are things
-            //derivativeDrive;
             double pDrive = 0;
-            //integralRotate;
-            //derivativeRotate;
             double pRotate = 0;
             
             integralDrive += errorDrive*deltaT/10000;
-            if(Math.abs(errorDrive) > 2){
+            if(Math.abs(errorDrive) > 1){
                 integralDrive = 0;
             }
             derivativeDrive = (tempErrorDrive-errorDrive)/deltaT;
-            pDrive = kDrive[0]*errorDrive + kDrive[1]*integralDrive + kDrive[2]*derivativeDrive;
+            pDrive = kDrive[0]*errorDrive + kDrive[1]*integralDrive + -10*kDrive[2]*derivativeDrive;
 
             integralRotate += errorRotate*deltaT/10000;
             if(Math.abs(errorRotate) > Math.PI/8){
                 integralRotate = 0;
             }
             derivativeRotate = (tempErrorRotate-errorRotate)/deltaT;
-            pRotate = kRotate[0]*errorRotate + kRotate[1]*integralRotate + kRotate[2]*derivativeRotate;
-            telemetry.addData("Proportional", kDrive[0]*errorDrive);
-            telemetry.addData("Integral", kDrive[1]*integralDrive);
-            telemetry.addData("Derivative", kDrive[2]*derivativeDrive);
-            telemetry.addData("DriveAtTheta", 180*theta/Math.PI);
-            telemetry.addData("DriveLinearPower", pDrive);
-            telemetry.addData("DriveRotatePower", pRotate);
-            telemetry.addData("Error Drive", errorDrive);
-            telemetry.addData("Error Rotate", errorRotate);
-            telemetry.update();
-            autoDrive(theta, pDrive, Range.clip(pRotate, -rotatePowerCap, rotatePowerCap));
-            if(Math.abs(errorDrive) > driveMargin){
+            pRotate = kRotate[0]*errorRotate + kRotate[1]*integralRotate + -10*kRotate[2]*derivativeRotate;
+
+            if(driveBy){
+                pDrive = Math.signum(pDrive);
+            }
+            autoDrive(theta, pDrive, pRotate);
+            if(Math.abs(errorDrive) > 0.15 || Math.abs(errorRotate) > 0.02){ //Change 0.1 to error margin if needed
                 driveTime = runtime.milliseconds();
             }
             lastTime = runtime.milliseconds();
+            telemetry.addData("errorDrive", errorDrive);
+            telemetry.update();
         }
-        while(runtime.milliseconds() - driveTime < 500 && opModeIsActive());
+        while(((runtime.milliseconds() - driveTime < 200 && !driveBy) || (Math.abs(errorDrive) > 0.8 && driveBy)) && opModeIsActive());
         shell.front_left_motor.setPower(0);
         shell.back_left_motor.setPower(0);
         shell.back_right_motor.setPower(0);
@@ -233,14 +169,13 @@ public class markerDouble extends LinearOpMode{
         while(runtime.milliseconds() - start < time && opModeIsActive()){
         }
     }
-
     public void updateCoordinates(){
-        encoder1.update(shell.encoder1.getVoltage());
-        encoder2.update(shell.encoder2.getVoltage());
+        encoderX.update(shell.encoderX.getVoltage());
+        encoderY.update(shell.encoderY.getVoltage());
         angleOverflow();
         angle = getHeading();
-        double deltaYAngle = encoder2.deltaAngle;
-        double deltaXAngle = -encoder1.deltaAngle;
+        double deltaYAngle = -encoderY.deltaAngle;
+        double deltaXAngle = encoderX.deltaAngle;
         double movementAngle = Math.atan2(deltaYAngle, deltaXAngle);
         x -= Math.sqrt(Math.pow(deltaXAngle, 2)+Math.pow(deltaYAngle, 2))*Math.cos(movementAngle-angle);
         y += Math.sqrt(Math.pow(deltaXAngle, 2)+Math.pow(deltaYAngle, 2))*Math.sin(movementAngle-angle);

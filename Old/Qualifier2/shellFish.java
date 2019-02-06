@@ -29,8 +29,14 @@ public class shellFish{
     public DcMotor back_left_motor    = null;
     public DcMotor back_right_motor   = null;
 
-    public DcMotor chadArm1 = null;
-    public DcMotor chadArm2 = null;
+    public DcMotor chadArm = null;
+
+    public DcMotor hook = null;
+
+    public DcMotor slide = null;
+    public Servo cardboardFlip = null;
+
+    public DcMotor intake = null;
 
     public AnalogInput encoderX = null;
     public AnalogInput encoderY = null;
@@ -56,26 +62,29 @@ public class shellFish{
         front_left_motor   = hwMap.dcMotor.get("fl");
         back_left_motor    = hwMap.dcMotor.get("bl");
         back_right_motor   = hwMap.dcMotor.get("br");
-        front_right_motor  = hwMap.dcMotor.get("fr");    
+        front_right_motor  = hwMap.dcMotor.get("fr");
+        
         front_left_motor.setDirection(DcMotor.Direction.REVERSE);
         back_left_motor.setDirection(DcMotor.Direction.FORWARD);
         back_right_motor.setDirection(DcMotor.Direction.FORWARD);
-        front_right_motor.setDirection(DcMotor.Direction.REVERSE);    
+        front_right_motor.setDirection(DcMotor.Direction.REVERSE);
+        
         front_left_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         back_left_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         back_right_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         front_right_motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        chadArm1 = hwMap.dcMotor.get("chadArm1");
-        chadArm2 = hwMap.dcMotor.get("chadArm2");
-        chadArm1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        chadArm2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        chadArm1.setDirection(DcMotor.Direction.REVERSE);
-        chadArm2.setDirection(DcMotor.Direction.FORWARD);
-        chadArm1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        chadArm2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        chadArm1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        chadArm2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        chadArm = hwMap.dcMotor.get("chadArm");
+
+        hook = hwMap.dcMotor.get("hook");
+        hook.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        hook.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        slide = hwMap.dcMotor.get("slide");
+        slide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        cardboardFlip = hwMap.servo.get("cardboardFlip");
+
+        intake = hwMap.dcMotor.get("intake");
 
         encoderX = hwMap.analogInput.get("encoderX");
         encoderY = hwMap.analogInput.get("encoderY");

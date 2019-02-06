@@ -34,7 +34,7 @@ public class mainTeleOp extends LinearOpMode {
     int fullRotationCount = 0;
     double previousAngle = 0;
     //]]]]]]]]]]]]]]]
-    int chadArmPos = 0;
+    
     private ElapsedTime runtime = new ElapsedTime();
     
     @Override
@@ -48,16 +48,28 @@ public class mainTeleOp extends LinearOpMode {
         while(opModeIsActive()){
             updateKeys();
             angleOverflow(); //Keep at the beginning of teleop loop
+            tickCount();
             //Player 1
             drive();
             //Player 2
-            chadArm();
+            cardboardFlip();
+            hook();
+            slide();
+            intake();
             if(gamepad2.b && cdCheck(useMap2.b, 500)){
                 telemetry.update();//THIS GOES AT THE END
             }
         }
     }
-    //Player 1
+    public void tickCount(){
+        tickCount++;
+        if(gamepad1.a){
+            tickCount = 0;
+            startTime = runtime.milliseconds();
+        }
+        //customTelemetryDouble("Tick Count", tickCount);
+        //customTelemetryDouble("Average Tick Rate", tickCount/(runtime.milliseconds()-startTime));
+    }
     public void drive(){
         double stick_x = gamepad1.left_stick_x;
         double stick_y = -gamepad1.left_stick_y;
@@ -129,23 +141,82 @@ public class mainTeleOp extends LinearOpMode {
         }
     }
     //Player 2
-    public void chadArm(){
-        if(gamepad1.a || gamepad2.a){ //Low
-            chadArmPos = 0;
+    public void cardboardFlip(){
+        if(!toggleMap2.dpad_up){
+            if(!toggleMap2.y){ //Load position
+                cardboardFlip.setPosition(0.696);
+            }
+            if(toggleMap2.y){ //Drop position
+                cardboardFlip.setPosition(0);
+            }
         }
-        else if(gamepad1.y || gamepad2.y){ //High
-            chadArmPos = 0;
+        if(toggleMap2.dpad_up){
+            cardboardFlip.setPosition(cardboardFlip.getPosition() + gamepad1.y/500);
         }
-        chadArmPos += (-gamepad2.right_stick_y*10) + (gamepad2.right_stick_x*100);
-        shell.chadArm1.setTargetPosition(chadArmPos);
-        shell.chadArm2.setTargetPosition(chadArmPos);
-        if(toggleMap1.b){
-            shell.chadArm1.setPower(0);
-            shell.chadArm2.setPower(0);
+    }
+    public void hook(){
+        if(!toggleMap2.dpad_left){
+            shell.hook.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            int min = 0;
+            int max = 0;
+            if(toggleMap2.x){
+                if(Math.abs(shell.hook.getCurrentPosition()-max) > 10){
+                    shell.hook.setTargetPosition(max);
+                    shell.hook.setPower(1);
+                }
+            }
+            if(!toggleMap2.x){
+                if(Math.abs(shell.hook.getCurrentPosition()-min) > 10){
+                    shell.hook.setTargetPosition(min);
+                    shell.hook.setPower(1);
+                }
+            }
+            if(Math.abs(shell.hook.getCurrentPosition()-min) < 10 || Math.abs(shell.hook.getCurrentPosition()-max) < 10){
+                shell.hook.setPower(0);
+            }
+        }
+        else if(toggleMap2.dpad_left){
+            shell.hook.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            shell.hook.setPower(gamepad2.right_stick_y);
+            telemetry.addData("Hook", shell.hook.getCurrentPosition());
+        }
+    }
+    public void slide(){
+        if(!toggleMap2.dpad_down){
+            shell.slide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            int min = 0;
+            int max = 0;
+            if(toggleMap2.a){
+                if(Math.abs(shell.slide.getCurrentPosition()-max) > 10){
+                    shell.slide.setTargetPosition(max);
+                    shell.slide.setPower(1);
+                }
+            }
+            if(!toggleMap2.a){
+                if(Math.abs(shell.slide.getCurrentPosition()-min) > 10){
+                    shell.slide.setTargetPosition(min);
+                    shell.slide.setPower(1);
+                }
+            }
+            if(Math.abs(shell.slide.getCurrentPosition()-min) < 10 || Math.abs(shell.slide.getCurrentPosition()-max) < 10){
+                shell.slide.setPower(0);
+            }
+        }
+        else if(toggleMap2.dpad_down){
+            shell.slide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            shell.slide.setPower(gamepad2.right_stick_y);
+            telemetry.addData("Slide", shell.slide.getCurrentPosition());
+        }
+    }
+    public void intake(){
+        if(gamepad1.right_trigger > 0){ //Outtake
+            shell.intake.setPower(1);
+        }
+        else if(toggleMap2.b){ //Intake
+            shell.intake.setPower(-1);
         }
         else{
-            shell.chadArm1.setPower(1);
-            shell.chadArm2.setPower(1);
+            shell.intake.setPower(0);
         }
     }
     //Other Function
@@ -178,28 +249,25 @@ public class mainTeleOp extends LinearOpMode {
     //[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[
     
     public void updateKeys(){
-        if(gamepad1.left_bumper && cdCheck(useMap1.left_bumper, 500)){ //Weird Gyro mode
-            toggleMap1.left_bumper = toggle(toggleMap1.left_bumper);
-            useMap1.left_bumper = runtime.milliseconds();
-        }
+    
         if(gamepad1.right_bumper && cdCheck(useMap1.right_bumper, 500)){ //Chad mode
             toggleMap1.right_bumper = toggle(toggleMap1.right_bumper);
             useMap1.right_bumper = runtime.milliseconds();
         }
-        if(gamepad2.dpad_up && cdCheck(useMap2.dpad_up, 500)){ //Nothing
+        if(gamepad2.dpad_up && cdCheck(useMap2.dpad_up, 500)){ //Servo troubleshooting
             toggleMap2.dpad_up = true;
             useMap2.dpad_up = runtime.milliseconds();
             toggleMap2.dpad_left = false;
             toggleMap2.dpad_down = false;
             toggleMap2.a = false;
         }
-        if(gamepad2.dpad_left && cdCheck(useMap2.dpad_left, 500)){ //Nothing
+        if(gamepad2.dpad_left && cdCheck(useMap2.dpad_left, 500)){ //Hook troubleshooting 
             toggleMap2.dpad_left = true;
             useMap2.dpad_left = runtime.milliseconds();
             toggleMap2.dpad_up = false;
             toggleMap2.dpad_down = false;
         }
-        if(gamepad2.dpad_down && cdCheck(useMap2.dpad_down, 500)){ //Nothing
+        if(gamepad2.dpad_down && cdCheck(useMap2.dpad_down, 500)){ //Slide troubleshooting
             toggleMap2.dpad_down = true;
             useMap2.dpad_down = runtime.milliseconds();
             toggleMap2.dpad_up = false;
@@ -210,13 +278,21 @@ public class mainTeleOp extends LinearOpMode {
             toggleMap2.dpad_left = false;
             toggleMap2.dpad_down = false;
         }
-        //gamepad1.a used for low chad arm position
-        //gamepad1.y used for high chad arm position
-        //gamepad2.a used for low chad arm position
-        //gamepad2.y used for high chad arm position
-        if((gamepad1.b || gamepad2.b) && cdCheck(useMap1.b, 500)){ //KILL CHAD ARM
-            toggleMap1.b = toggle(toggleMap1.b);
-            useMap1.b = runtime.milliseconds();
+        if(gamepad2.y && cdCheck(useMap2.y, 500)){
+            toggleMap2.y = toggle(toggleMap2.y);
+            useMap2.y = runtime.milliseconds();
+        }
+        if(gamepad2.a && cdCheck(useMap2.a, 500)){
+            toggleMap2.a = toggle(toggleMap2.a);
+            useMap2.a = runtime.milliseconds();
+        }
+        if(gamepad2.b && cdCheck(useMap2.b, 500)){
+            toggleMap2.b = toggle(toggleMap2.b);
+            useMap2.b = runtime.milliseconds();
+        }
+        if(gamepad2.x && cdCheck(useMap2.x, 500)){
+            toggleMap2.x = toggle(toggleMap2.x);
+            useMap2.x = runtime.milliseconds();
         }
     }
     public boolean cdCheck(double key, int cdTime){
@@ -231,6 +307,16 @@ public class mainTeleOp extends LinearOpMode {
         }
         return variable;
     }
+    // public void customTelemetryDouble(String 1, double 2){
+    //     if(gamepad2.b && cdCheck(useMap2.b, 500)){
+    //         telemetry.addData(1, 2);
+    //     }
+    // }
+    // public void customTelemetryString(String 1, String 2){
+    //     if(gamepad2.b && cdCheck(useMap2.b, 500)){
+    //         telemetry.addData(1, 2);
+    //     }
+    // }
 }
 
 

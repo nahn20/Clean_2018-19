@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 //Just a place to store use time variables
 public class encoderClass{
-    double range = 1;
+    double range = 0.9;
     double voltageToAngle = 2*Math.PI/3.28;
 
     double startingVoltage = 0;
@@ -28,14 +28,14 @@ public class encoderClass{
         // else if(Math.abs(voltage-previousVoltage) > range){
         //     rotationCounter += direction;
         // }
-        if(voltage < 3 && voltage > 0.3 && previousVoltage < 3 && previousVoltage > 0.3){
-            if(voltage - previousVoltage > 0.1){
-                direction = 1;
-            }
-            if(voltage - previousVoltage < -0.1){
-                direction = -1;
-            }
-        }
+        // if(voltage < 3 && voltage > 0.3 && previousVoltage < 3 && previousVoltage > 0.3){
+        //     if(voltage - previousVoltage > 0.1){
+        //         direction = 1;
+        //     }
+        //     if(voltage - previousVoltage < -0.1){
+        //         direction = -1;
+        //     }
+        // }
         previousVoltage = voltage;
         angle = voltageToAngle*(rotationCounter*3.28+voltage-startingVoltage);
         deltaAngle = angle-previousAngle;

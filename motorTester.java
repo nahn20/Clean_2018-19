@@ -18,6 +18,7 @@ public class motorTester extends LinearOpMode {
         while(opModeIsActive()){
             motorPower();
             telemetry.update();
+
         }
     }
     public void motorPower(){
