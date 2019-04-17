@@ -1,31 +1,30 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.disnodeteam.dogecv.CameraViewDisplay;
+import com.disnodeteam.dogecv.DogeCV;
+import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
-import android.view.View;
-import android.graphics.Color;
-import android.app.Activity;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-import com.qualcomm.robotcore.util.Range;
+@Autonomous(name="safeZoneSingle", group="Testy")
+public class safeZoneSingle extends LinearOpMode{
 
-@Autonomous(name="testingAuto", group="Testy")
-public class testingAuto extends LinearOpMode{
-    
     private ElapsedTime runtime = new ElapsedTime();
     shellFish shell = new shellFish();
 
     encoderClass encoderX = new encoderClass();
     encoderClass encoderY = new encoderClass();
-    String cheese = "center"; //Better to use int, but here I get to write string cheese
-    
+
+    private GoldAlignDetector shapeSensor;
+
+    String cheese = "none"; //Better to use int, but here I get to write string cheese
+
     double x = 0; //From drop, driving out is +x
     double y = 0; //From drop, driving left is +y, driving right is -y
     int fullRotationCount = 0;
@@ -55,7 +54,27 @@ public class testingAuto extends LinearOpMode{
         telemetry.addData(">", "Loading IMU.");
         telemetry.update();
         shell.imu();
-        
+        telemetry.addData(">", "Preparing DogeCV");
+        telemetry.update();
+
+        shapeSensor = new GoldAlignDetector();
+        shapeSensor.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
+        shapeSensor.useDefaults();
+
+        // Optional Tuning
+        shapeSensor.alignSize = 100; // How wide (in pixels) is the range in which the gold object will be aligned. (Represented by green bars in the preview)
+        shapeSensor.alignPosOffset = 0; // How far from center frame to offset this alignment zone.
+        shapeSensor.downscale = 0.4; // How much to downscale the input frames
+
+        shapeSensor.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
+        //shapeSensor.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
+        shapeSensor.maxAreaScorer.weight = 0.005;
+
+        shapeSensor.ratioScorer.weight = 5;
+        shapeSensor.ratioScorer.perfectRatio = 1.0;
+
+        shapeSensor.enable();
+
         telemetry.addData(">", "Ready ayaya");
         telemetry.update();
 
@@ -66,16 +85,55 @@ public class testingAuto extends LinearOpMode{
         // S T A R T /\/\ S T A R T /\/\ S T A R T /\/\ S T A R T \\
         ////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////
-        
+
         double startTime = runtime.milliseconds();
         encoderX.init(shell.encoderX.getVoltage());
         encoderY.init(shell.encoderY.getVoltage());
-        doublePID(0, 5, Math.PI/2, true);
-        doublePID(-10, 5, Math.PI/2, false);
-        doublePID(-5, 10, 0, false);
-        doublePID(0, 0, 0, false);
-        
-    
+        for(int i = 0; i < 3 && cheese == "none"; i++) {
+            if(i == 0){
+                doublePID(0, 2, 0, false);
+            }
+            if(i == 1){
+                doublePID(0, 2, 0.55, false);
+            }
+            if(i == 2){
+                doublePID(0, 2, -0.55, false);
+            }
+            checkCheese();
+        }
+        if(cheese == "none"){
+            cheese = "center";
+        }
+        shapeSensor.disable();
+        telemetry.addData("Cheese", cheese);
+        telemetry.update();
+        if(cheese == "right"){
+            doublePID(7.64, 14.37, -0.5, true);
+            doublePID(7, 14, -0.5, true);
+            doublePID(7.94, 18.6, 0.5, false);
+            doublePID(16.51, 14.11, -2.3, true);
+            doublePID(27.75, 4.48, -2.3, true);
+        }
+        if(cheese == "center"){
+            doublePID(0, 13.56, 0, true);
+            doublePID(0, 15.66, 0, false);
+            doublePID(0, 6.32, 0, true);
+            doublePID(10.88, 7.47, -1.48, true);
+            doublePID(11.54, 6.62, -1.54, true);
+            doublePID(16.51, 14.11, -2.3, true);
+            doublePID(27.75, 4.48, -2.3, true);
+        }
+        if(cheese == "left"){
+            doublePID(-7.64, 14.37, 0.5, true);
+            doublePID(-7, 14, -0.5, true);
+            doublePID(-7.94, 18.6, -0.5, false);
+            doublePID(-9.89, 6.75, -1.48, true);
+            doublePID(10.88, 7.47, -1.48, true);
+            doublePID(26.22, -0.14, -2.05, true);
+
+        }
+
+
     }
     public void doublePID(double desiredX, double desiredY, double desiredAngle, boolean driveBy){
         double driveTime = runtime.milliseconds();
@@ -107,7 +165,7 @@ public class testingAuto extends LinearOpMode{
             errorRotate = angle - desiredAngle;
             double pDrive = 0;
             double pRotate = 0;
-            
+
             integralDrive += errorDrive*deltaT/10000;
             if(Math.abs(errorDrive) > 1){
                 integralDrive = 0;
@@ -126,7 +184,7 @@ public class testingAuto extends LinearOpMode{
                 pDrive = Math.signum(pDrive);
             }
             autoDrive(theta, pDrive, pRotate);
-            if(Math.abs(errorDrive) > 0.15 || Math.abs(errorRotate) > 0.02){ //Change 0.1 to error margin if needed
+            if(Math.abs(errorDrive) > 0.15 || Math.abs(errorRotate) > 0.04){ //Change 0.1 to error margin if needed
                 driveTime = runtime.milliseconds();
             }
             lastTime = runtime.milliseconds();
@@ -140,10 +198,10 @@ public class testingAuto extends LinearOpMode{
         shell.front_right_motor.setPower(0);
     }
     public void autoDrive(double theta, double magnitude, double Protate){
-        double modifiedTheta = theta + Math.PI/4 - angle; 
+        double modifiedTheta = theta + Math.PI/4 - angle;
 
         magnitude *= (1-Math.abs(Protate)); //Multiplied by (1-Protate) so it doesn't go over 1 with rotating
-        double Px = magnitude * Math.cos(modifiedTheta); 
+        double Px = magnitude * Math.cos(modifiedTheta);
         double Py = magnitude * Math.sin(modifiedTheta);
 
         shell.front_left_motor.setPower(Py + Protate);
@@ -163,6 +221,27 @@ public class testingAuto extends LinearOpMode{
         shell.back_left_motor.setPower(0);
         shell.back_right_motor.setPower(0);
         shell.front_right_motor.setPower(0);
+    }
+    public void checkCheese() {
+        double xView = shapeSensor.getXPosition();
+        int range = 200;
+        telemetry.addData("X Pos", xView);
+        telemetry.update();
+        double t = runtime.milliseconds();
+        while (!(xView > 300 - range && xView < 300 + range) && runtime.milliseconds() - t < 1000) {
+        }
+        if(xView > 300 - range && xView < 300 + range){
+            double roboAngle = getHeading();
+            if (roboAngle < Math.PI / 12 && roboAngle > -Math.PI / 12) {
+                cheese = "center";
+            }
+            if (roboAngle > Math.PI / 6 && roboAngle < Math.PI / 2) {
+                cheese = "left";
+            }
+            if (roboAngle < -Math.PI / 6 && roboAngle > -Math.PI / 2) {
+                cheese = "right";
+            }
+        }
     }
     public void sleepNotSleep(double time){
         double start = runtime.milliseconds();

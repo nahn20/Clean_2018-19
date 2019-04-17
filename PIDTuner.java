@@ -27,20 +27,18 @@ public class PIDTuner extends LinearOpMode {
     int fullRotationCount = 0;
     double previousAngle = 0;
     double angle = 0;
-    double savedX = -10;
-    double savedY = 5;
+    double savedX = 0;
+    double savedY = 0;
     double savedAngle = Math.PI/2;
     ////////////////
     // PID Stuffs \\
 
     //PID constants are [p, i, d] in order. 
-    double kDrive[] = {0.346, 1.33, 2.97}; //PID constants for linear drive power
+    double kDrive[] = {0.38, 1, 0.24}; //PID constants for linear drive power
+    //{0.44, 1.27, 0.54}
 
-    //{0.346, 0, 2.97} FUcking beautiful
-    //{0.346, 0, 3.6} Jittery but works pretty well
+    double kRotate[] = {0.84, 3.188, 0.41}; //PID constants for rotation
 
-    double kRotate[] = {1.02, 3.83, 3.28}; //PID constants for rotation
-    //{.21, 6.82, 3.72}
 
     double errorDrive = 0;
     double errorRotate = 0;
@@ -84,11 +82,11 @@ public class PIDTuner extends LinearOpMode {
             }
 
             if(toggleMap1.right_bumper){
-                telemetry.addData("Going to", 0 + " " + 0 + " " + 0);
+                //telemetry.addData("Going to", 0 + " " + 0 + " " + 0);
                 doublePID(0, 0, 0);
             }
             else if(toggleMap1.left_bumper){
-                telemetry.addData("Going to", savedX + " " + savedY + " " + savedAngle);
+                //telemetry.addData("Going to", savedX + " " + savedY + " " + savedAngle);
                 doublePID(savedX, savedY, savedAngle);
             }
             else{
@@ -121,15 +119,15 @@ public class PIDTuner extends LinearOpMode {
         }
         if(toggleMap2.b){
             telemetry.addData("Editing", "Rotation Constants");
-            telemetry.addData("kP", kRotate[0]);
-            telemetry.addData("kI", kRotate[1]);
-            telemetry.addData("kD", kRotate[2]);
+            // telemetry.addData("kP", kRotate[0]);
+            // telemetry.addData("kI", kRotate[1]);
+            // telemetry.addData("kD", kRotate[2]);
         }
         else if(!toggleMap2.b){
             telemetry.addData("Editing", "Drive Constants");
-            telemetry.addData("kP", kDrive[0]);
-            telemetry.addData("kI", kDrive[1]);
-            telemetry.addData("kD", kDrive[2]);
+            // telemetry.addData("kP", kDrive[0]);
+            // telemetry.addData("kI", kDrive[1]);
+            // telemetry.addData("kD", kDrive[2]);
         }
         if(toggleMap2.y){
             telemetry.addData("Editing", "kP");
@@ -203,13 +201,13 @@ public class PIDTuner extends LinearOpMode {
         }
         derivativeDrive = (tempErrorDrive-errorDrive)/deltaT;
         pDrive = kDrive[0]*errorDrive + kDrive[1]*integralDrive + -10*kDrive[2]*derivativeDrive;
-        telemetry.addData("!!!", "Linear Drive Variables");
-        telemetry.addData("Error Drive", errorDrive);
-        telemetry.addData("Proportional", kDrive[0]*errorDrive);
-        telemetry.addData("Integral", kDrive[1]*integralDrive);
-        telemetry.addData("Derivative", kDrive[2]*derivativeDrive);
-        telemetry.addData("Drive At Theta", 180*theta/Math.PI);
-        telemetry.addData("Power", pDrive);
+        // telemetry.addData("!!!", "Linear Drive Variables");
+        // telemetry.addData("Error Drive", errorDrive);
+        // telemetry.addData("Proportional", kDrive[0]*errorDrive);
+        // telemetry.addData("Integral", kDrive[1]*integralDrive);
+        // telemetry.addData("Derivative", kDrive[2]*derivativeDrive);
+        // telemetry.addData("Drive At Theta", 180*theta/Math.PI);
+        // telemetry.addData("Power", pDrive);
 
         integralRotate += errorRotate*deltaT/10000;
         if(Math.abs(errorRotate) > Math.PI/8){
@@ -217,12 +215,12 @@ public class PIDTuner extends LinearOpMode {
         }
         derivativeRotate = (tempErrorRotate-errorRotate)/deltaT;
         pRotate = kRotate[0]*errorRotate + kRotate[1]*integralRotate + -10*kRotate[2]*derivativeRotate;
-        telemetry.addData("!!!", "Rotational Drive Variables");
+        // telemetry.addData("!!!", "Rotational Drive Variables");
         telemetry.addData("Error Rotate", errorRotate);
-        telemetry.addData("Rotational Proportional", kDrive[0]*errorDrive);
-        telemetry.addData("Rotational Integral", kDrive[1]*integralDrive);
-        telemetry.addData("Rotational Derivative", kDrive[2]*derivativeDrive);
-        telemetry.addData("Rotational Power", pRotate);
+        // telemetry.addData("Rotational Proportional", kDrive[0]*errorDrive);
+        // telemetry.addData("Rotational Integral", kDrive[1]*integralDrive);
+        // telemetry.addData("Rotational Derivative", kDrive[2]*derivativeDrive);
+        // telemetry.addData("Rotational Power", pRotate);
 
 
         if(toggleMap1.x){
